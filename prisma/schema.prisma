@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+model Patient {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String   @unique 
+  password    String
+  dateOfBirth DateTime
+  phoneNumber String?
+  administrateur    Administrateur @relation(fields: [id], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  rendez_vous RDV[]
+  role        Role     @default(PATIENT)
+  @@map(name: "patients")
+  
+}
+
+model Administrateur {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String  @unique
+  password    String
+  articles    String[]
+  patients    Patient[]
+  rendez_vous RDV[]
+  psychologue  Psychologue[]
+  role        Role     @default(ADMINISTRATEUR)
+  @@map(name: "administrateurs")
+}
+
+model Psychologue {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  email          String        @unique
+  specialite     String
+  administrateur Administrateur @relation(fields: [id], references: [id])
+  articles       Article[]
+  rendez_vous    RDV[]
+  password       String
+  profile        String?      
+  document        String[]      
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  role           Role          @default(PSYCHOLOGUE)
+  approved       Boolean?      @default(false)
+  @@map(name: "psychologues")
+}
+
+
+
+model RDV {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  patient     Patient @relation(fields: [id], references: [id])
+  // patient_id  String  @map("_id")
+  psychologue  Psychologue @relation(fields: [id], references: [id])
+  administrateur  Administrateur @relation(fields: [id], references: [id])
+  dateRdv     DateTime 
+  libelle     String
+  status      StatusRDV  @default(EnAttente)
+  @@map(name: "rdvs")
+}
+
+model Article {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  content      String
+  psychologue  Psychologue @relation(fields: [id], references: [id])
+  publishedDate DateTime @default(now())
+  nbViews     Int     @default(0)
+  @@map(name: "articles")
+}
+
+
+
+
+// Autres modèles et types
+
+enum Role {
+  ADMINISTRATEUR
+  PATIENT
+  PSYCHOLOGUE
+}
+
+enum StatusRDV {
+  EnAttente
+  Confirme
+  Annule
+}
